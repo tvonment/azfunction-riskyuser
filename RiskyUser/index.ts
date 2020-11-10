@@ -1,17 +1,19 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 import axios, { AxiosRequestConfig } from 'axios';
 import qs = require('qs');
+import { ConnectAppContext } from "twilio/lib/rest/api/v2010/account/connectApp";
 
 
-const SUPPORT_EMAIL = "thomas@balderdash.ch"
+const SUPPORT_EMAIL = "admin@M365x390549.onmicrosoft.com"
 
-const APP_ID = "";
-const APP_SECERET = "";
-const TENANT_ID = "";
+const APP_ID = "526ffb90-22be-4d01-a589-7704dbb72c95";
+const APP_SECERET = "aArJlK-0~5W3Ni7I6mmDk_O6cm0HhK.GLi";
+const TENANT_ID = "1542dbe2-93a5-488f-b4ab-903ee1fa3ec8";
+const MFA_ENFORCED_GROUPID = "2354b73b-030d-49c0-be74-1a7cc11c002b";
 
-const TWILIO_ACCOUNT_SID = '';
-const TWILIO_AUTH_TOKEN = '';
-const TWILIO_NUMBER = '';
+const TWILIO_ACCOUNT_SID = 'AC7c428127d32561a3ca50ec29ea7d2054';
+const TWILIO_AUTH_TOKEN = 'e194bb95b46b498d620e02a2744d7932';
+const TWILIO_NUMBER = '+14303000808';
 
 const TOKEN_ENDPOINT = 'https://login.microsoftonline.com/' + TENANT_ID + '/oauth2/v2.0/token';
 const MS_GRAPH_SCOPE = 'https://graph.microsoft.com/.default';
@@ -30,12 +32,11 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     let riskyusers = await getRiskyUsers(token);
     let userinfos = await getRiskyUserProfiles(token, riskyusers);
     for(let i in userinfos) {
-        resetPassword(token, userinfos[i]);
         //await sendSMS(userinfos[i].mobilePhone, userinfos[i].userPrincipalName);
-        /*for (let mail of userinfos[i].otherMails) {
-            await sendMail(token, userinfos[i].userPrincipalName, mail);
+        for (let mail of userinfos[i].otherMails) {
+            //await sendMail(token, userinfos[i].userPrincipalName, mail);
         }
-        await sendSupportMail(token, userinfos[i], riskyusers[i])*/
+        await sendSupportMail(token, userinfos[i], riskyusers[i])
     }
     
     context.res = {
@@ -60,6 +61,7 @@ class RiskyUser {
 }
 
 class RiskyUserProfile {
+    id: string;
     displayName: string;
     userPrincipalName: string;
     mobilePhone: string;
@@ -109,7 +111,7 @@ async function getRiskyUserProfiles(token: string, users:RiskyUser[]): Promise<R
     for (let user of users) {
         let config: AxiosRequestConfig = {
             method: 'get',
-            url: MS_GRAPH_ENDPOINT_BETA + 'users/' + user.userPrincipalName + '?$select=displayName,userPrincipalName,mobilePhone,otherMails',
+            url: MS_GRAPH_ENDPOINT_BETA + 'users/' + user.userPrincipalName + '?$select=id,displayName,userPrincipalName,mobilePhone,otherMails',
             headers: {
               'Authorization': 'Bearer ' + token //the token is a variable which holds the token
             }
@@ -124,46 +126,6 @@ async function getRiskyUserProfiles(token: string, users:RiskyUser[]): Promise<R
         }));
     }
     return userinfos;
-}
-
-async function resetPassword(token: string, user: RiskyUserProfile) {
-    /* Get Password Profile ID */
-    let config1: AxiosRequestConfig = {
-        method: 'get',
-        url: MS_GRAPH_ENDPOINT_BETA + 'users/' + user.userPrincipalName + '/authentication/passwordMethods',
-        headers: {
-          'Authorization': 'Bearer ' + token //the token is a variable which holds the token
-        },
-    }
-    let passwordMethodId = await axios(config1)
-        .then(response => {
-            console.log(response.data);
-            return response.data.value.id;
-        })
-        .catch(error => {
-            console.log(error);
-        });
-    
-    
-    /* Reset Password */
-    let config: AxiosRequestConfig = {
-        method: 'post',
-        url: MS_GRAPH_ENDPOINT_BETA + 'users/' + user.userPrincipalName + '/authentication/passwordMethods/' + passwordMethodId + '/resetPassword',
-        headers: {
-          'Authorization': 'Bearer ' + token //the token is a variable which holds the token
-        },
-        data: {
-            newPassword: 'newPassword-value'
-        }
-    }
-    await axios(config)
-        .then(response => {
-            console.log(response.data);
-            return response.data;
-        })
-        .catch(error => {
-            console.log(error);
-        });
 }
 
 async function sendMail(token: string, userPrincipal: string, mailAddress: string) {
