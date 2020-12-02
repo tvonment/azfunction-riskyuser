@@ -1,8 +1,18 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import axios, { AxiosRequestConfig } from 'axios';
 import qs = require('qs');
 
+const SUPPORT_EMAIL = "jan.aebersold@be.ch"
+const SUPPORT_SEND_MAIL = "jae@edubern-test.ch"
+const APP_ID = "32ca135e-d663-4924-ab9c-dc4c33e3a819";
+const APP_SECERET = "fWAVPrZ12Bg-4W~Y6_8Nx1m8Jlc18SO.GK";
+const TENANT_ID = "a269cb9e-c4ae-4657-a96b-c288eafd30c2";
 
+/*const SUPPORT_EMAIL = "thvome@gmail.com"
+const SUPPORT_SEND_MAIL = "bob@projectxyzdemo.onmicrosoft.com"
+const APP_ID = "4ecb1580-e2fc-4222-8900-3d34d994f3f5";
+const APP_SECERET = "_0vlwIgPx3q1~8.e-Dq_SYLwj22snI6s4_";
+const TENANT_ID = "2c315d01-a109-433f-b02c-583257b57e53";*/
 
 const TOKEN_ENDPOINT = 'https://login.microsoftonline.com/' + TENANT_ID + '/oauth2/v2.0/token';
 const MS_GRAPH_SCOPE = 'https://graph.microsoft.com/.default';
