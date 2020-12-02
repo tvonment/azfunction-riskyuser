@@ -14,8 +14,8 @@ const TOKEN_ENDPOINT = 'https://login.microsoftonline.com/' + TENANT_ID + '/oaut
 const MS_GRAPH_SCOPE = 'https://graph.microsoft.com/.default';
 const MS_GRAPH_ENDPOINT = 'https://graph.microsoft.com/v1.0/';
 
-const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
-    context.log('HTTP trigger function processed a request.');
+const timerTrigger: AzureFunction = async function (context: Context, myTimer: any): Promise<void> {
+    context.log('Timer trigger function processed a request.');
 
     // Set Default Header for Axios Requests
     axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -26,12 +26,13 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     // Get detected Risks
     let riskdetections = await getRiskDetections(token);
 
-    riskdetections.push(new RiskDetections());
     // Filter for only last 24h
-    riskdetections = riskdetections.filter(isFromLastDay)
+    riskdetections = riskdetections.filter(isFrom2minutes)
 
     // Send Mail to defined User
-    await sendSupportMail(token, riskdetections)
+    if (riskdetections.length > 0) {
+        await sendSupportMail(token, riskdetections)
+    }
 
     // Give back the detected Risks
     context.res = {
@@ -40,17 +41,17 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     };
 
 };
-export default httpTrigger;
+export default timerTrigger;
 
-function isFromLastDay(riskd: RiskDetections) {
+function isFrom2minutes(riskd: RiskDetections) {
     console.log(riskd)
     let aDT = new Date(riskd.activityDateTime).getDate();
     let timeStamp = Math.round(new Date().getTime() / 1000);
-    let timeStampYesterday = timeStamp - (24 * 3600);
-    let is24 = aDT >= new Date(timeStampYesterday*1000).getTime();
+    let timeStamp2minsago = timeStamp - (120);
+    let is2minsago = aDT >= new Date(timeStamp2minsago*1000).getTime();
     console.log(aDT);
-    console.log(is24);
-    if (is24) {
+    console.log(is2minsago);
+    if (is2minsago) {
         return riskd;
     }
 }
